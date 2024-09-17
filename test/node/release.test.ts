@@ -43,6 +43,7 @@ const REQUIRED_FILES = [
   'src/parser/on_demand/index.ts',
   'src/parser/on_demand/parse_to_elements.ts',
   'src/regexp.ts',
+  'src/reference.ts',
   'src/symbol.ts',
   'src/timestamp.ts',
   'src/utils/byte_utils.ts',

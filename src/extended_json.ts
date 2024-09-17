@@ -18,6 +18,7 @@ import { MaxKey } from './max_key';
 import { MinKey } from './min_key';
 import { ObjectId } from './objectid';
 import { isDate, isRegExp, isMap } from './parser/utils';
+import { Reference } from './reference';
 import { BSONRegExp } from './regexp';
 import { BSONSymbol } from './symbol';
 import { Timestamp } from './timestamp';
@@ -38,6 +39,10 @@ export type EJSONOptions = {
    * @defaultValue `false`
    */
   useBigInt64?: boolean;
+  /**
+   * Reference map
+   */
+  refMap?: Record<string, string>;
 };
 
 /** @internal */
@@ -54,7 +59,8 @@ type BSONType =
   | ObjectId
   | BSONRegExp
   | BSONSymbol
-  | Timestamp;
+  | Timestamp
+  | Reference;
 
 function isBSONType(value: unknown): value is BSONType {
   return (
@@ -80,7 +86,8 @@ const keysToCodecs = {
   $maxKey: MaxKey,
   $regex: BSONRegExp,
   $regularExpression: BSONRegExp,
-  $timestamp: Timestamp
+  $timestamp: Timestamp,
+  $reference: Reference
 } as const;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -416,7 +423,8 @@ function parse(text: string, options?: EJSONOptions): any {
   const ejsonOptions = {
     useBigInt64: options?.useBigInt64 ?? false,
     relaxed: options?.relaxed ?? true,
-    legacy: options?.legacy ?? false
+    legacy: options?.legacy ?? false,
+    refMap: options?.refMap ?? {}
   };
   return JSON.parse(text, (key, value) => {
     if (key.indexOf('\x00') !== -1) {

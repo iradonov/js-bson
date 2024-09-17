@@ -99,7 +99,7 @@
   "scripts": {
     "pretest": "npm run build",
     "test": "npm run check:node && npm run check:web && npm run check:web-no-bigint",
-    "check:node": "WEB=false mocha test/node",
+    "check:node": "mocha test/node",
     "check:tsd": "npm run build:dts && tsd",
     "check:web": "WEB=true mocha test/node",
     "check:web-no-bigint": "WEB=true NO_BIGINT=true mocha test/node",

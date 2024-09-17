@@ -20,9 +20,11 @@ const ObjectId = BSON.ObjectId;
 const BSONRegExp = BSON.BSONRegExp;
 const BSONSymbol = BSON.BSONSymbol;
 const Timestamp = BSON.Timestamp;
+const Reference = BSON.Reference;
 
 describe('Extended JSON', function () {
   let doc = {};
+  const refMap = { user: '222222222222222222222222' };
 
   before(function () {
     const buffer = Buffer.alloc(64);
@@ -43,6 +45,7 @@ describe('Extended JSON', function () {
       maxKey: new MaxKey(),
       minKey: new MinKey(),
       objectId: ObjectId.createFromHexString('111111111111111111111111'),
+      reference: new Reference(),
       regexp: new BSONRegExp('hello world', 'i'),
       symbol: new BSONSymbol('symbol'),
       timestamp: Timestamp.fromNumber(1000),
@@ -56,14 +59,16 @@ describe('Extended JSON', function () {
   it('should correctly extend an existing mongodb module', function () {
     // TODO(NODE-4377): doubleNumberIntFit should be a double not a $numberLong
     const json =
-      '{"_id":{"$numberInt":"100"},"gh":{"$numberInt":"1"},"binary":{"$binary":{"base64":"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+Pw==","subType":"00"}},"date":{"$date":{"$numberLong":"1488372056737"}},"code":{"$code":"function() {}","$scope":{"a":{"$numberInt":"1"}}},"dbRef":{"$ref":"tests","$id":{"$numberInt":"1"},"$db":"test"},"decimal":{"$numberDecimal":"100"},"double":{"$numberDouble":"10.1"},"int32":{"$numberInt":"10"},"long":{"$numberLong":"200"},"maxKey":{"$maxKey":1},"minKey":{"$minKey":1},"objectId":{"$oid":"111111111111111111111111"},"regexp":{"$regularExpression":{"pattern":"hello world","options":"i"}},"symbol":{"$symbol":"symbol"},"timestamp":{"$timestamp":{"t":0,"i":1000}},"int32Number":{"$numberInt":"300"},"doubleNumber":{"$numberDouble":"200.2"},"longNumberIntFit":{"$numberLong":"7036874417766400"},"doubleNumberIntFit":{"$numberLong":"19007199250000000"}}';
+      '{"_id":{"$numberInt":"100"},"gh":{"$numberInt":"1"},"binary":{"$binary":{"base64":"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+Pw==","subType":"00"}},"date":{"$date":{"$numberLong":"1488372056737"}},"code":{"$code":"function() {}","$scope":{"a":{"$numberInt":"1"}}},"dbRef":{"$ref":"tests","$id":{"$numberInt":"1"},"$db":"test"},"decimal":{"$numberDecimal":"100"},"double":{"$numberDouble":"10.1"},"int32":{"$numberInt":"10"},"long":{"$numberLong":"200"},"maxKey":{"$maxKey":1},"minKey":{"$minKey":1},"objectId":{"$oid":"111111111111111111111111"},"reference":{"$reference":""},"regexp":{"$regularExpression":{"pattern":"hello world","options":"i"}},"symbol":{"$symbol":"symbol"},"timestamp":{"$timestamp":{"t":0,"i":1000}},"int32Number":{"$numberInt":"300"},"doubleNumber":{"$numberDouble":"200.2"},"longNumberIntFit":{"$numberLong":"7036874417766400"},"doubleNumberIntFit":{"$numberLong":"19007199250000000"}}';
 
     expect(json).to.equal(EJSON.stringify(doc, null, 0, { relaxed: false }));
   });
 
   it('should correctly deserialize using the default relaxed mode (relaxed=true)', function () {
     // Deserialize the document using relaxed=true mode
-    let doc1 = EJSON.parse(EJSON.stringify(doc, null, 0));
+    let doc1 = EJSON.parse(EJSON.stringify(doc, null, 0), {
+      refMap
+    });
 
     // Validate the values
     expect(300).to.equal(doc1.int32Number);
@@ -72,7 +77,7 @@ describe('Extended JSON', function () {
     expect(19007199250000000).to.equal(doc1.doubleNumberIntFit);
 
     // Deserialize the document using relaxed=false
-    doc1 = EJSON.parse(EJSON.stringify(doc, null, 0), { relaxed: false });
+    doc1 = EJSON.parse(EJSON.stringify(doc, null, 0), { relaxed: false, refMap });
 
     // Validate the values
     expect(doc1.int32Number._bsontype).to.equal('Int32');
@@ -194,6 +199,7 @@ describe('Extended JSON', function () {
       maxKey: new MaxKey(),
       minKey: new MinKey(),
       objectId: ObjectId.createFromHexString('111111111111111111111111'),
+      reference: new Reference(),
       bsonRegExp: new BSONRegExp('hello world', 'i'),
       symbol: new BSONSymbol('symbol'),
       timestamp: new Timestamp(),
@@ -212,6 +218,7 @@ describe('Extended JSON', function () {
       long: { $numberLong: '234' },
       maxKey: { $maxKey: 1 },
       minKey: { $minKey: 1 },
+      reference: { $reference: '' },
       objectId: { $oid: '111111111111111111111111' },
       bsonRegExp: { $regularExpression: { pattern: 'hello world', options: 'i' } },
       symbol: { $symbol: 'symbol' },
@@ -233,12 +240,16 @@ describe('Extended JSON', function () {
       maxKey: { $maxKey: 1 },
       minKey: { $minKey: 1 },
       objectId: { $oid: '111111111111111111111111' },
+      reference: { $reference: 'user' },
       bsonRegExp: { $regularExpression: { pattern: 'hello world', options: 'i' } },
       symbol: { $symbol: 'symbol' },
       timestamp: { $timestamp: { t: 0, i: 0 } }
     };
 
-    const result = EJSON.deserialize(doc, { relaxed: false });
+    const result = EJSON.deserialize(doc, {
+      relaxed: false,
+      refMap: { user: '222222222222222222222222' }
+    });
 
     // binary
     expect(result.binary).to.be.an.instanceOf(BSON.Binary);
@@ -265,6 +276,8 @@ describe('Extended JSON', function () {
     expect(result.minKey).to.be.an.instanceOf(BSON.MinKey);
     // objectID
     expect(result.objectId.toString()).to.equal('111111111111111111111111');
+    // reference
+    expect(result.reference.toString()).to.equal('222222222222222222222222');
     //bsonRegExp
     expect(result.bsonRegExp).to.be.an.instanceOf(BSON.BSONRegExp);
     expect(result.bsonRegExp.pattern).to.equal('hello world');

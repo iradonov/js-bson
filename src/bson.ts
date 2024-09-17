@@ -17,6 +17,7 @@ import { BSONSymbol } from './symbol';
 import { Timestamp } from './timestamp';
 import { ByteUtils } from './utils/byte_utils';
 import { NumberUtils } from './utils/number_utils';
+import { Reference } from './reference';
 export type { UUIDExtended, BinaryExtended, BinaryExtendedLegacy, BinarySequence } from './binary';
 export type { CodeExtended } from './code';
 export type { DBRefLike } from './db_ref';
@@ -48,6 +49,7 @@ export {
   MinKey,
   MaxKey,
   BSONRegExp,
+  Reference,
   Decimal128
 };
 export { BSONValue } from './bson_value';
